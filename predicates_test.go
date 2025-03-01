@@ -65,8 +65,34 @@ func TestParensMatch(t *testing.T) {
 }
 
 func TestSplitParenAware(t *testing.T) {
-	code := "a(b, c, d(e, f), g)"
+	code := "a,b"
 	tokens := Tokenize(code, HASH_IS_DIRECTIVE)
+	parts := SplitParenAware(tokens, ",")
+	if len(parts) != 2 {
+		t.Errorf("got %q, want %q", len(parts), 2)
+	}
+	if JoinSpellings(parts[0], "") != "a" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[0], ""), "a")
+	}
+	if JoinSpellings(Strip(parts[1]), "") != "b" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[1], ""), "b")
+	}
+
+	code = "a(1,2),b"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	parts = SplitParenAware(tokens, ",")
+	if len(parts) != 2 {
+		t.Errorf("got %q, want %q", len(parts), 2)
+	}
+	if JoinSpellings(parts[0], "") != "a(1,2)" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[0], ""), "a(1,2)")
+	}
+	if JoinSpellings(Strip(parts[1]), "") != "b" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[1], ""), "b")
+	}
+
+	code = "a(b, c, d(e, f), g)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
 	open := tokens[1]
 	if open.Spelling != "(" {
 		t.Errorf("got %q, want %q", open.Spelling, "(")
@@ -82,9 +108,9 @@ func TestSplitParenAware(t *testing.T) {
 		t.Errorf("got %q, want %q", close.TokenIndex, 18)
 	}
 	inParens := tokens[open.TokenIndex+1 : close.TokenIndex]
-	parts := SplitParenAware(inParens, ",")
+	parts = SplitParenAware(inParens, ",")
 	if len(parts) != 4 {
-		t.Errorf("got %q, want %q", len(parts), 4)
+		t.Errorf("got %d, want %d", len(parts), 4)
 	}
 	if JoinSpellings(parts[0], "") != "b" {
 		t.Errorf("got %q, want %q", JoinSpellings(parts[0], ""), "b")

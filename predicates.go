@@ -191,11 +191,13 @@ func SplitParenAware(tokens []Token, seperator string) [][]Token {
 				// unable to parse - matching paren missing
 				return nil
 			}
-			skip = skipUntil
-		}	else {
+			skip = skipUntil + i
+			current = append(current, tokens[i:skip]...)
+		} else {
 			current = append(current, token)
 		}
 	}
+	result = append(result, current)
 	return result
 }
 
