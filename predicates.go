@@ -171,6 +171,7 @@ func Split(tokens []Token, seperator string) [][]Token {
 			current = append(current, token)
 		}
 	}
+	result = append(result, current)
 	return result
 }
 

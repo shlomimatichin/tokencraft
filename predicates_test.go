@@ -125,3 +125,19 @@ func TestSplitParenAware(t *testing.T) {
 		t.Errorf("got %q, want %q", JoinSpellings(parts[3], ""), "g")
 	}
 }
+
+func TestSplitBug(t *testing.T) {
+	code := "tenantactivity_mv | take 10; tenantactivity_mv | project EventID"
+	tokens := Tokenize(code, HASH_IS_DIRECTIVE)
+	tokens = DropWhitespaces(tokens)
+	parts := Split(tokens, ";")
+	if len(parts) != 2 {
+		t.Errorf("got %d, want %d", len(parts), 2)
+	}
+	if JoinSpellings(parts[0], "") != "tenantactivity_mv|take10" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[0], ""), "tenantactivity_mv|take10")
+	}
+	if JoinSpellings(parts[1], "") != "tenantactivity_mv|projectEventID" {
+		t.Errorf("got %q, want %q", JoinSpellings(parts[1], ""), "tenantactivity_mv|projectEventID")
+	}
+}
