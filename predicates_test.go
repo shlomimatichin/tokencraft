@@ -20,8 +20,8 @@ func TestFind(t *testing.T) {
 	found := FindAllSpellings(tokens, []string{"void", "it", "("})
 	expected := [][]Token{
 		{
-			{IDENTIFIER, 27, 3, 6, "void", 9},
-			{IDENTIFIER, 30, 3, 9, "it", 11},
+			{IDENTIFIER, 23, 3, 2, "void", 9},
+			{IDENTIFIER, 28, 3, 7, "it", 11},
 			{SPECIAL, 30, 3, 9, "(", 12},
 		},
 	}
