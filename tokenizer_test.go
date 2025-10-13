@@ -6,6 +6,21 @@ import (
 	"testing"
 )
 
+func TestTokenizePanicRepro(t *testing.T) {
+	// Minimal reproduction of panic from /tmp/t.ts
+	// Bug: eatUntilAfter panics with index out of range [-1] when
+	// processing unclosed multi-line comment starting with "/*"
+	code := "/*"
+	tokens := Tokenize(code, HASH_IS_DIRECTIVE)
+	// Should not panic - even with unclosed comment
+	if len(tokens) != 1 {
+		t.Errorf("Expected 1 token, got %d", len(tokens))
+	}
+	if tokens[0].Type != COMMENT {
+		t.Errorf("Expected COMMENT token, got %v", tokens[0].Type)
+	}
+}
+
 func TestTokenize(t *testing.T) {
 	code := "class Name {\n" +
 		" public:\n" +
