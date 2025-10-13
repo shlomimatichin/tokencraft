@@ -132,6 +132,41 @@ func FindMatchingParen(tokens []Token) (*Token, int) {
 	return nil, -1
 }
 
+func FindMatchingClosingParen(tokens []Token, index int) (*Token, int) {
+	if index < 0 || index >= len(tokens) {
+		// Invalid index
+		return nil, -1
+	}
+	close := tokens[index]
+	if _, ok := closes[close.Spelling]; !ok {
+		// Not a close token
+		return nil, -1
+	}
+	stack := []Token{close}
+	for i := index - 1; i >= 0; i-- {
+		candidate := tokens[i]
+		if _, ok := closes[candidate.Spelling]; ok {
+			stack = append(stack, candidate)
+		} else if openFor, ok := opens[candidate.Spelling]; ok {
+			if len(stack) == 0 {
+				// No close token
+				return nil, -1
+			}
+			popped := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if openFor != popped.Spelling {
+				// Incoherent parenthesis
+				return nil, -1
+			}
+			if len(stack) == 0 {
+				return &candidate, i
+			}
+		}
+	}
+	// No open token
+	return nil, -1
+}
+
 func DropWhitespaces(tokens []Token) []Token {
 	result := []Token{}
 	for _, token := range tokens {

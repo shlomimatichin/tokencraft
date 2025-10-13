@@ -141,3 +141,178 @@ func TestSplitBug(t *testing.T) {
 		t.Errorf("got %q, want %q", JoinSpellings(parts[1], ""), "tenantactivity_mv|projectEventID")
 	}
 }
+
+func TestFindMatchingClosingParen(t *testing.T) {
+	// Test basic matching
+	code := "a(b)"
+	tokens := Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the closing paren at index 3
+	closeIndex := 3
+	open, i := FindMatchingClosingParen(tokens, closeIndex)
+	if open == nil {
+		t.Errorf("got nil, want opening paren")
+	}
+	if open.Spelling != "(" {
+		t.Errorf("got %q, want %q", open.Spelling, "(")
+	}
+	if i != 1 {
+		t.Errorf("got index %d, want %d", i, 1)
+	}
+
+	// Test nested parentheses
+	code = "a(b(c)d)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the outer closing paren
+	closeIndex = -1
+	for i := len(tokens) - 1; i >= 0; i-- {
+		if tokens[i].Spelling == ")" {
+			closeIndex = i
+			break
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open == nil {
+		t.Errorf("got nil, want opening paren")
+	}
+	if open.Spelling != "(" {
+		t.Errorf("got %q, want %q", open.Spelling, "(")
+	}
+	// Should match the first opening paren
+	if tokens[i].Spelling != "(" || i != 1 {
+		t.Errorf("got index %d with spelling %q, want index 1 with '('", i, tokens[i].Spelling)
+	}
+
+	// Test inner nested paren
+	code = "a(b(c)d)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the inner closing paren
+	closeCount := 0
+	closeIndex = -1
+	for i, tok := range tokens {
+		if tok.Spelling == ")" {
+			closeCount++
+			if closeCount == 1 {
+				closeIndex = i
+				break
+			}
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open == nil {
+		t.Errorf("got nil, want opening paren")
+	}
+	if open.Spelling != "(" {
+		t.Errorf("got %q, want %q", open.Spelling, "(")
+	}
+	// Should match the second opening paren
+	if i != 3 {
+		t.Errorf("got index %d, want %d", i, 3)
+	}
+
+	// Test with braces
+	code = "class Name { void it() { } }"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the last closing brace
+	closeIndex = -1
+	for i := len(tokens) - 1; i >= 0; i-- {
+		if tokens[i].Spelling == "}" {
+			closeIndex = i
+			break
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open == nil {
+		t.Errorf("got nil, want opening brace")
+	}
+	if open.Spelling != "{" {
+		t.Errorf("got %q, want %q", open.Spelling, "{")
+	}
+
+	// Test with brackets
+	code = "array[index[0]]"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the outer closing bracket
+	closeIndex = -1
+	for i := len(tokens) - 1; i >= 0; i-- {
+		if tokens[i].Spelling == "]" {
+			closeIndex = i
+			break
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open == nil {
+		t.Errorf("got nil, want opening bracket")
+	}
+	if open.Spelling != "[" {
+		t.Errorf("got %q, want %q", open.Spelling, "[")
+	}
+
+	// Test invalid index (negative)
+	code = "a(b)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	open, i = FindMatchingClosingParen(tokens, -1)
+	if open != nil {
+		t.Errorf("got %v, want nil for invalid negative index", open)
+	}
+	if i != -1 {
+		t.Errorf("got %d, want -1 for invalid negative index", i)
+	}
+
+	// Test invalid index (out of bounds)
+	open, i = FindMatchingClosingParen(tokens, 100)
+	if open != nil {
+		t.Errorf("got %v, want nil for out of bounds index", open)
+	}
+	if i != -1 {
+		t.Errorf("got %d, want -1 for out of bounds index", i)
+	}
+
+	// Test non-closing paren token
+	code = "a(b)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	open, i = FindMatchingClosingParen(tokens, 0) // 'a' is not a closing paren
+	if open != nil {
+		t.Errorf("got %v, want nil for non-closing paren", open)
+	}
+	if i != -1 {
+		t.Errorf("got %d, want -1 for non-closing paren", i)
+	}
+
+	// Test mismatched parentheses
+	code = "a(b]"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the closing bracket
+	closeIndex = -1
+	for i, tok := range tokens {
+		if tok.Spelling == "]" {
+			closeIndex = i
+			break
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open != nil {
+		t.Errorf("got %v, want nil for mismatched parens", open)
+	}
+	if i != -1 {
+		t.Errorf("got %d, want -1 for mismatched parens", i)
+	}
+
+	// Test no matching opening paren
+	code = "b)"
+	tokens = Tokenize(code, HASH_IS_DIRECTIVE)
+	// Find the closing paren
+	closeIndex = -1
+	for i, tok := range tokens {
+		if tok.Spelling == ")" {
+			closeIndex = i
+			break
+		}
+	}
+	open, i = FindMatchingClosingParen(tokens, closeIndex)
+	if open != nil {
+		t.Errorf("got %v, want nil when no opening paren exists", open)
+	}
+	if i != -1 {
+		t.Errorf("got %d, want -1 when no opening paren exists", i)
+	}
+}
