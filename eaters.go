@@ -40,7 +40,8 @@ func eatUntilAfter(e *Eater, lookFor string) string {
 		e.advance()
 	}
 	for !e.done() {
-		if e.offset < len(lookFor) - 1 {
+		// Ensure we have enough data to look back
+		if e.offset < len(lookFor) {
 			e.advance()
 			continue
 		}

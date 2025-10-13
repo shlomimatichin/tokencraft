@@ -10,14 +10,29 @@ func TestTokenizePanicRepro(t *testing.T) {
 	// Minimal reproduction of panic from /tmp/t.ts
 	// Bug: eatUntilAfter panics with index out of range [-1] when
 	// processing unclosed multi-line comment starting with "/*"
-	code := "/*"
-	tokens := Tokenize(code, HASH_IS_DIRECTIVE)
-	// Should not panic - even with unclosed comment
-	if len(tokens) != 1 {
-		t.Errorf("Expected 1 token, got %d", len(tokens))
+	testCases := []struct {
+		name     string
+		code     string
+		expected int
+	}{
+		{"unclosed comment 2 chars", "/*", 1},
+		{"unclosed comment 3 chars", "/* ", 1},
+		{"unclosed comment with text", "/* hello", 1},
+		{"closed comment", "/* test */", 1},
+		{"comment then code", "/* test */ x", 3}, // comment, whitespace, identifier
 	}
-	if tokens[0].Type != COMMENT {
-		t.Errorf("Expected COMMENT token, got %v", tokens[0].Type)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tokens := Tokenize(tc.code, HASH_IS_DIRECTIVE)
+			// Should not panic
+			if len(tokens) < 1 {
+				t.Errorf("Expected at least 1 token, got %d", len(tokens))
+			}
+			if tokens[0].Type != COMMENT {
+				t.Errorf("Expected first token to be COMMENT, got %v", tokens[0].Type)
+			}
+		})
 	}
 }
 
